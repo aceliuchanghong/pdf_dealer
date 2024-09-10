@@ -17,8 +17,20 @@
 ### Env
 
 ```shell
-conda create -n pdf_dealer python=3.11
+conda create -n pdf_dealer python=3.11 -y
 conda activate pdf_dealer
 pip install -r requirements.txt
-pip freeze > requirements.txt
+```
+
+### Test
+
+```shell
+# 翻译文档
+
+```
+
+### Prompt
+
+```
+工厂模式
 ```
