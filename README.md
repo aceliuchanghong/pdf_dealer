@@ -17,6 +17,7 @@
 ### Env
 
 ```shell
+vi .env
 conda create -n pdf_dealer python=3.11 -y
 conda activate pdf_dealer
 pip install -r requirements.txt
