@@ -2,7 +2,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os
 
-from z_utils.str2json import parse_json_markdown
+from z_utils.check_str2json import parse_json_markdown
 
 # way1
 # from langchain_openai import ChatOpenAI
@@ -89,8 +89,9 @@ From:xx Page:30F42021-02-0000: SOB2xxxx02-14875
 口预付款; 合同签订后, 需方预付人民币 (小写)
 
 """
-user_prompt = "合同里面6块钱一个的电容销售了多少个?"
-# user_prompt = "合同里面SOB或者SOA编号是?格式是SOB20..."
+user_prompt = "合同里面6块钱一个的电容销售了多少个?格式为纯数字"
+# user_prompt = '救生部署是什么?'
+#user_prompt = "合同里面SOB或者SOA编号是?格式是SOB20..."
 # 加载.env文件
 load_dotenv()
 client = OpenAI(api_key=os.getenv('API_KEY'), base_url=os.getenv('BASE_URL'))
@@ -100,8 +101,9 @@ response = client.chat.completions.create(
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": Basic_info + user_prompt},
     ],
-    # response_format={"type": "json_object"},
+    response_format={"type": "json_object"},
     temperature=0.0
 )
 ans_temp = response.choices[0].message.content
+print(ans_temp)
 print(parse_json_markdown(ans_temp))

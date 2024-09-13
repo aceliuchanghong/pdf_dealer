@@ -7,14 +7,14 @@ app = FastAPI()
 
 
 @app.post("/run-ocr/")
-async def run_ocr(image_file: str):
+async def run_ocr(image_file, ocr_type='format'):
     # 检查输入图像文件路径是否存在
     if not os.path.isfile(image_file):
         raise HTTPException(status_code=400, detail="Input image file does not exist.")
 
     # 构建GOT-OCR命令
     command = ["python", "GOT-OCR-2.0-master/GOT/demo/run_ocr_2.0.py", "--model-name", "model/", "--image-file",
-               image_file, "--type", "format"]
+               image_file, "--type", ocr_type]
     print(f"Executing command: {command}")
 
     # 执行命令

@@ -43,7 +43,7 @@ def parse_minerU_middle_json(middle_json_file_path):
     return table_image_list
 
 
-def pdf2md(file_ori_path, file_out_path, *, ocr_mode='auto'):
+def pdf2md(file_ori_path, file_out_path, *, ocr_mode='auto', ip='112.48.199.7'):
     url = f"http://{ip}:9521/convert-pdf/"
     data = {
         "input_pdf_path": file_ori_path,
@@ -92,5 +92,5 @@ if __name__ == '__main__':
     file_ori_path, file_out_path = '/mnt/data/llch/ForMinerU/input/测试文件样本1/2/Pic_0009.pdf', '/mnt/data/llch/ForMinerU/output'
     # ip = "127.0.0.1"
     ip = "112.48.199.7"
-    response = pdf2md(file_ori_path, file_out_path)
+    response = pdf2md(file_ori_path, file_out_path, ip=ip)
     print(response, response['output_dir'])
