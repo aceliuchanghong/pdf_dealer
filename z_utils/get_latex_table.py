@@ -22,11 +22,12 @@ OCR: <|im_end|><|im_start|>assistant\n"""
     end_time = time.time()
     elapsed_time = end_time - start_time
     # print(f"花费: {elapsed_time} s")
+    print(response.json())
     ans = response.json()['output'].replace(dont_need1, '').replace(dont_need2, '')
     return ans
 
 
 if __name__ == '__main__':
-    image_file = '/mnt/data/llch/GOT-OCR2.0/input/1.jpg'
+    image_file = '/mnt/data/llch/GOT-OCR2.0/input/test2.jpg'
     ans = get_latex_table(image_file)
     print(ans)

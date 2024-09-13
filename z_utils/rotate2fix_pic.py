@@ -35,7 +35,7 @@ def detect_text_orientation(image_path, output_dir='./z_test/pics'):
         os.makedirs(output_dir)
     random_integer1 = random.randint(10000, 200000)
     random_integer2 = random.randint(10, 2000)
-    corrected_image_path = os.path.join(f"{output_dir}", f"{random_integer1}_{random_integer2}.png")
+    corrected_image_path = os.path.join(f"{output_dir}", f"{random_integer1}_{random_integer2}.jpg")
 
     cv2.imwrite(corrected_image_path, img)
     file_name = os.path.basename(image_path)

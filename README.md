@@ -8,11 +8,11 @@
 
 ### 流程
 
-1. pdf==>picsA
-2. picsA==>picsB(旋转图片为阅读方向)
-3. picsB==>ansA:txt+picsC+table(OCR识别图片提取 标准文字+表格图片+纯图片+表格)
-4. ansA==>entityA(提取实体)
-5. entityA==>show_data(实体展示)
+1. pdf==>md
+```启动了
+nohup python z_utils/magic_pdf_server.py > magic_pdf_server.log &
+nohup python z_utils/ocr_latex_server.py > ocr_latex_server.log &
+```
 
 ### Env
 
