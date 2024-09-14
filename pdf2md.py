@@ -7,6 +7,7 @@ from tqdm import tqdm
 from z_utils.get_latex_table import get_latex_table
 from z_utils.parse_minerU_ans import pdf2md, parse_minerU_middle_json, replace_images
 from z_utils.rotate2fix_pic import detect_text_orientation
+from z_utils.upload2minio import replace_image_links_in_md
 
 load_dotenv()
 log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
@@ -87,7 +88,7 @@ def process_pdf(input_pdf_path, output_path, *, rotate_pic=False, upload_pics=Fa
                                    os.path.basename(original_md).split('.')[0] + '_latex_up.md')
         logger.debug(f"原始latex_md: {original_latex_md}, 更新后md: {new_md_path}")
         start_time = time.time()
-        # <剩余图片上传到minio的逻辑>
+        replace_image_links_in_md(original_latex_md, new_md_path)
         end_time = time.time()  # 记录结束时间
         elapsed_time = end_time - start_time  # 计算耗时
         logger.info(f"图片上传完成，耗时: {elapsed_time:.2f}秒\n")
