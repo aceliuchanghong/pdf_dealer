@@ -15,16 +15,16 @@ load_dotenv()
 def emb_chunks(embed, chunk_list):
     def process_chunk(i, chunk):
         temp = {}
-        vec = embed.embed_query(chunk)
+        vec = embed.embed_documents(chunk)
         temp['id'] = str(i)
         temp['text'] = chunk
-        temp['vector'] = vec
+        temp['vector'] = vec[0]
         return temp
 
     start_time = time.time()  # 记录开始时间
     with ThreadPoolExecutor() as executor:
         results = list(tqdm(executor.map(lambda x: process_chunk(*x), enumerate(chunk_list)),
-                            total=len(chunk_list), desc="embedding......"))
+                            total=len(chunk_list), desc="embedding..."))
     end_time = time.time()  # 记录结束时间
     elapsed_time = end_time - start_time  # 计算耗时
     print(f"embedding完成，耗时: {elapsed_time:.2f}秒\n")
