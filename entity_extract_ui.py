@@ -31,7 +31,7 @@ def create_app():
                                                    choices=['提取合同信息规则', '提取发票信息规则'],
                                                    value='提取合同信息规则', interactive=True,
                                                    info='自定义好规则后需要点击右侧刷新', scale=5)
-                        refresh1 = gr.Button("刷新规则", scale=1)
+                        refresh1 = gr.Button("🧲刷新规则", scale=1)
                     save_pic_or_table = gr.Dropdown(label='2️⃣短文档快速识别', choices=['是', '否'],
                                                     value='是', interactive=True,
                                                     info='快速读取文档内容-内含表格未结构化-仅对页数小于3起效')
@@ -174,10 +174,10 @@ def create_app():
                 gr.Image(label='🤖basic_info', value="z_using_files/pics/ell-wide-light.png")
             gr.Markdown("---")
             with gr.Row():
-                rule_option2 = gr.Dropdown(label='选择规则', choices=['提取合同信息规则', '提取发票信息规则'],
+                rule_option2 = gr.Dropdown(label='🎨选择规则', choices=['提取合同信息规则', '提取发票信息规则'],
                                            interactive=True, value='提取合同信息规则',
                                            info='自定义好规则后需要点击右侧刷新', scale=5)
-                refresh2 = gr.Button("刷新规则", scale=1)
+                refresh2 = gr.Button("🧲刷新规则", scale=1)
                 button_del = gr.Button("🔑删除此规则", scale=1, variant="stop")
             notice = gr.Textbox(visible=False)
 
@@ -186,11 +186,11 @@ def create_app():
                 all_rule_name = excute_sqlite_sql(select_all_rule_name_sql)
                 for rule_name in all_rule_name:
                     rule_name_list.append(rule_name[0])
-                logger.info(f"rule_name_list:{rule_name_list}")
+                logger.debug(f"rule_name_list:{rule_name_list}")
                 return gr.update(value=rule_name_list[0], choices=rule_name_list)
 
             def delete_rule(rule_name):
-                delete_rule_name = excute_sqlite_sql(delete_rule_sql, (rule_name,), False)
+                excute_sqlite_sql(delete_rule_sql, (rule_name,), False)
                 return gr.Textbox(visible=True, value="已删除:" + rule_name)
 
         button_del.click(delete_rule, rule_option2, notice)
