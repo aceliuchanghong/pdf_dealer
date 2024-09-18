@@ -1,17 +1,16 @@
 ### Pdf_dealer
 
-完全处理不能读取只能ocr的pdf文档
+ocr-pdf文档实体提取
 
-### Hope
+![img_1.png](z_using_files/pics/img_1.png)
 
-1. 各个模块分开
+![img.png](z_using_files/pics/img.png)
 
-### 流程
+### UI
 
-1. pdf==>md
-```启动了
-nohup python z_utils/magic_pdf_server.py > magic_pdf_server.log &
-nohup python z_utils/ocr_latex_server.py > ocr_latex_server.log &
+```shell
+python entity_extract_ui.py
+nohup python entity_extract_ui.py>entity_extract_ui.log &
 ```
 
 ### Env
@@ -21,19 +20,6 @@ vi .env
 conda create -n pdf_dealer python=3.11 -y
 conda activate pdf_dealer
 pip install -r requirements.txt
-```
-
-### Test
-
-```shell
-# 翻译文档
-
-```
-
-### Prompt
-
-```
-工厂模式
 ```
 
 ### Emoji

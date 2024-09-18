@@ -21,6 +21,7 @@ SELECT
 FROM rule_info
 WHERE 
   rule_name = ? 
+  order by latest_modified_insert desc
 """
 
 insert_rule_sql = """
@@ -36,14 +37,13 @@ INSERT INTO rule_info (
 VALUES (?, ?, ?, ?, ?, ?, ?)
 """
 
-update_rule_sql = """
-UPDATE rule_info 
-SET 
-  entity_name = ?, 
-  entity_format = ?, 
-  entity_regex_pattern = ?, 
-  rule_state = ?, 
-  latest_modified_insert = ?, 
-  remark = ? 
+delete_rule_sql = """
+DELETE from rule_info 
 WHERE rule_name = ?
+"""
+
+select_all_rule_name_sql = """
+SELECT distinct
+  rule_name
+FROM rule_info
 """
