@@ -12,7 +12,6 @@ log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
 logging.basicConfig(level=getattr(logging, log_level))
 logger = logging.getLogger(__name__)
 
-
 def create_app():
     with gr.Blocks(title="📋文档实体提取📋") as demo:
         with gr.Tab(label='📙文档处理'):
@@ -58,11 +57,12 @@ def create_app():
                             "entity_name": "",
                             "entity_format": "",
                             "entity_regex_pattern": "",
+                            "entity_order": "",
                         }
                     ]
 
                 def query_rule_click(rule_basic_name, tasks):
-                    if rule_basic_name == 'lchtxdy':
+                    if rule_basic_name == os.getenv('KEY_WORD'):
                         return gr.update(visible=True), tasks
                     else:
                         try:
@@ -76,6 +76,7 @@ def create_app():
                                     "entity_name": entity[0],
                                     "entity_format": entity[1],
                                     "entity_regex_pattern": entity[2],
+                                    "entity_order": entity[3],
                                 }
                                 tasks.append(task)
                                 logger.debug(f"entity:{entity}")
@@ -101,6 +102,7 @@ def create_app():
                             'entity_name': target_task['entity_name'],
                             'entity_format': target_task['entity_format'],
                             'entity_regex_pattern': target_task['entity_regex_pattern'],
+                            'entity_order': target_task['entity_order'],
                             'rule_state': 1,
                             'latest_modified_insert': current_time,
                             'remark': '暂无'
@@ -111,6 +113,7 @@ def create_app():
                                                                              entity['entity_name'],
                                                                              entity['entity_format'],
                                                                              entity['entity_regex_pattern'],
+                                                                             entity['entity_order'],
                                                                              entity['rule_state'],
                                                                              entity['latest_modified_insert'],
                                                                              entity['remark'],),
@@ -138,23 +141,28 @@ def create_app():
                                                    interactive=True)
                         entity_regex_pattern = gr.Textbox(label='值的正则表达式', scale=3, interactive=True,
                                                           placeholder="该值的正则表达式?(可选/若填入则准确值上升)eg:S[Oo0]B[0-9]{1,}-[0-9]{1,}")
+                        entity_order = gr.Textbox(label='值的重命名顺序', placeholder="1,2,3,...", scale=3,
+                                                  interactive=True)
                         temp_sure_btn = gr.Button("确定", scale=1, variant="secondary")
                         delete_btn = gr.Button("删除此行", scale=1, variant="stop")
 
-                        def mark_done(entity_name_value, entity_format_value, entity_regex_value, task=task):  # 捕获输入值
+                        def mark_done(entity_name_value, entity_format_value, entity_regex_value, entity_order,
+                                      task=task):  # 捕获输入值
                             task["rendered"] = True
                             task["entity_name"] = entity_name_value
                             task["entity_format"] = entity_format_value
                             task["entity_regex_pattern"] = entity_regex_value
+                            task["entity_order"] = entity_order
                             logger.debug(
-                                f"{task['name']},{task['rendered']},{task['entity_name']},{task['entity_format']},{task['entity_regex_pattern']}")
+                                f"{task['name']},{task['rendered']},{task['entity_name']},{task['entity_format']},{task['entity_regex_pattern']},{task['entity_order']}")
                             return task_list
 
                         def delete(task=task):
                             task_list.remove(task)
                             return task_list
 
-                        temp_sure_btn.click(mark_done, [entity_name, entity_format, entity_regex_pattern], [tasks])
+                        temp_sure_btn.click(mark_done, [entity_name, entity_format, entity_regex_pattern, entity_order],
+                                            [tasks])
                         delete_btn.click(delete, None, [tasks])
                 for task in complete:
                     with gr.Row():
@@ -162,6 +170,8 @@ def create_app():
                         gr.Textbox(label='值的样式', value=task["entity_format"], interactive=False, scale=3)
                         gr.Textbox(label='值的正则表达式', value=task["entity_regex_pattern"], interactive=False,
                                    scale=3)
+                        gr.Textbox(label='值的重命名顺序', value=task["entity_order"], scale=3,
+                                   interactive=True)
                         delete_btn2 = gr.Button("删除此行", scale=1, variant="stop")
 
                         def delete2(task=task):

@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS rule_info (
   entity_name TEXT, 
   entity_format TEXT, 
   entity_regex_pattern TEXT, 
+  entity_order TEXT, 
   rule_state TEXT, 
   latest_modified_insert TEXT, 
   remark TEXT
@@ -15,6 +16,7 @@ SELECT
   entity_name,
   entity_format,
   entity_regex_pattern,
+  entity_order,
   rule_state,
   latest_modified_insert,
   remark 
@@ -30,11 +32,12 @@ INSERT INTO rule_info (
   entity_name, 
   entity_format, 
   entity_regex_pattern, 
+  entity_order,
   rule_state, 
   latest_modified_insert, 
   remark
 ) 
-VALUES (?, ?, ?, ?, ?, ?, ?)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 """
 
 delete_rule_sql = """
