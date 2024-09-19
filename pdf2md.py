@@ -100,6 +100,7 @@ def process_pdf(input_pdf_path, output_path, *, rotate_pic=False, upload_pics=Fa
 
 if __name__ == '__main__':
     """
+    export no_proxy="localhost,127.0.0.1"
     python pdf2md.py --input_pdf_path /mnt/data/llch/ForMinerU/input/hehe/img20240708_16193473.pdf --output_path /mnt/data/llch/ForMinerU/output --rotate_pic
     --rotate_pic
     --upload_pic

@@ -34,11 +34,29 @@ def chunk_by_LCEL(file_path, chunk_size=700, chunk_overlap=300):
     return texts
 
 
+def get_command_run(command_str):
+    # 拆分命令字符串并执行命令
+    command = command_str.split(" ")
+    # print(command)
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, encoding='utf-8', errors='ignore')
+        result.check_returncode()  # 检查命令是否成功执行
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        # 捕获命令执行失败的情况并返回错误信息
+        return f"Command failed with error: {e.stderr}"
+    except Exception as e:
+        # 捕获其他异常并返回错误信息
+        return f"An error occurred: {str(e)}"
+
+
 if __name__ == '__main__':
     md_file_path = r'C:\Users\liuch\Documents\img20240708_16193473_latex.md'
 
     # output = run_js_script('../z_test/chunk.js', md_file_path)
-    output = chunk_by_LCEL(md_file_path)
-    # for 循环
-    for y, i in enumerate(output):
-        print(str(y) + ":", i.page_content)
+    # output = chunk_by_LCEL(md_file_path)
+    # for y, i in enumerate(output):
+    #     print(str(y) + ":", i.page_content)
+
+    print(get_command_run("echo hello world"))
+    print(get_command_run("dir"))

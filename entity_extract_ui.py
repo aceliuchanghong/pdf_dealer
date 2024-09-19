@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 from z_utils.check_db import excute_sqlite_sql
+from z_utils.get_text_chunk import get_command_run
 from z_utils.sql_sentence import create_rule_table_sql, select_rule_sql, insert_rule_sql, delete_rule_sql, \
     select_all_rule_name_sql
 
@@ -11,6 +12,7 @@ load_dotenv()
 log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
 logging.basicConfig(level=getattr(logging, log_level))
 logger = logging.getLogger(__name__)
+
 
 def create_app():
     with gr.Blocks(title="📋文档实体提取📋") as demo:
@@ -21,6 +23,7 @@ def create_app():
             with gr.Row():
                 file_original = gr.File(file_count='single', file_types=['image', '.pdf'],
                                         label='📕上传文件', scale=5)
+                file_original.GRADIO_CACHE = file_default_path
                 pic_show = gr.Gallery(label='📙文件预览', scale=5, columns=4, container=True, preview=True)
             gr.Markdown("---")
             with gr.Row():
@@ -135,16 +138,17 @@ def create_app():
 
                 for task in incomplete:
                     with gr.Row():
-                        entity_name = gr.Textbox(label='要提取的值', placeholder="提取什么值?eg:SOB编号", scale=3,
+                        entity_name = gr.Textbox(label='🔑要提取的值', placeholder="提取什么值?eg:SOB编号", scale=3,
                                                  interactive=True)
-                        entity_format = gr.Textbox(label='值的样式', placeholder="该值大概什么样式?eg:SOB20..", scale=3,
+                        entity_format = gr.Textbox(label='🔑值的样式', placeholder="该值大概什么样式?eg:SOB20..",
+                                                   scale=3,
                                                    interactive=True)
-                        entity_regex_pattern = gr.Textbox(label='值的正则表达式', scale=3, interactive=True,
+                        entity_regex_pattern = gr.Textbox(label='🔑值的正则表达式', scale=3, interactive=True,
                                                           placeholder="该值的正则表达式?(可选/若填入则准确值上升)eg:S[Oo0]B[0-9]{1,}-[0-9]{1,}")
-                        entity_order = gr.Textbox(label='值的重命名顺序', placeholder="1,2,3,...", scale=3,
+                        entity_order = gr.Textbox(label='🔑值的重命名顺序', placeholder="1,2,3,...", scale=3,
                                                   interactive=True)
-                        temp_sure_btn = gr.Button("确定", scale=1, variant="secondary")
-                        delete_btn = gr.Button("删除此行", scale=1, variant="stop")
+                        temp_sure_btn = gr.Button("💪确定", scale=1, variant="secondary")
+                        delete_btn = gr.Button("🖍️删除此行", scale=1, variant="stop")
 
                         def mark_done(entity_name_value, entity_format_value, entity_regex_value, entity_order,
                                       task=task):  # 捕获输入值
@@ -166,13 +170,13 @@ def create_app():
                         delete_btn.click(delete, None, [tasks])
                 for task in complete:
                     with gr.Row():
-                        gr.Textbox(label='要提取的值', value=task["entity_name"], interactive=False, scale=3)
-                        gr.Textbox(label='值的样式', value=task["entity_format"], interactive=False, scale=3)
-                        gr.Textbox(label='值的正则表达式', value=task["entity_regex_pattern"], interactive=False,
+                        gr.Textbox(label='🔒要提取的值', value=task["entity_name"], interactive=False, scale=3)
+                        gr.Textbox(label='🔒样式', value=task["entity_format"], interactive=False, scale=3)
+                        gr.Textbox(label='🔒正则表达式', value=task["entity_regex_pattern"], interactive=False,
                                    scale=3)
-                        gr.Textbox(label='值的重命名顺序', value=task["entity_order"], scale=3,
+                        gr.Textbox(label='🔒重命名顺序', value=task["entity_order"], scale=3,
                                    interactive=True)
-                        delete_btn2 = gr.Button("删除此行", scale=1, variant="stop")
+                        delete_btn2 = gr.Button("🖍️删除此行", scale=1, variant="stop")
 
                         def delete2(task=task):
                             task_list.remove(task)
@@ -190,6 +194,10 @@ def create_app():
                 refresh2 = gr.Button("🧲刷新规则", scale=1)
                 button_del = gr.Button("🔑删除此规则", scale=1, variant="stop")
             notice = gr.Textbox(visible=False)
+            with gr.Row():
+                input_command = gr.Textbox(label='🌐输入命令', placeholder="ls", value="ls", interactive=True, scale=5)
+                button_command = gr.Button("🔑执行", scale=1, variant="secondary")
+            output_command = gr.Textbox(label="✨执行结果", lines=5)
 
             def get_all_rule_name():
                 rule_name_list = []
@@ -203,6 +211,7 @@ def create_app():
                 excute_sqlite_sql(delete_rule_sql, (rule_name,), False)
                 return gr.Textbox(visible=True, value="已删除:" + rule_name)
 
+        button_command.click(get_command_run, input_command, output_command)
         button_del.click(delete_rule, rule_option2, notice)
         refresh2.click(get_all_rule_name, [], rule_option2)
         refresh1.click(get_all_rule_name, [], rule_option1)
@@ -215,6 +224,8 @@ if __name__ == '__main__':
     python entity_extract_ui.py
     nohup python entity_extract_ui.py>entity_extract_ui.log &
     """
+    file_default_path = './upload_files'
+    os.makedirs(file_default_path, exist_ok=True)
     excute_sqlite_sql(create_rule_table_sql)
     app = create_app()
     app.launch(server_name=os.getenv('HOST'), server_port=int(os.getenv('PORT')), share=False)
