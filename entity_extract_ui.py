@@ -61,7 +61,7 @@ def create_app():
                         quick_ocr = gr.Dropdown(label='2️⃣短文档快速识别', choices=['是', '否'],
                                                 value='是', interactive=True, scale=5,
                                                 info='快速读取文档内容-内含表格未结构化-仅对页数小于3起效')
-                        rename_input_file = gr.Dropdown(label='3️⃣是否需要重命名文件', choices=['是', '否'],
+                        rename_input_file = gr.Dropdown(label='3️⃣是否重命名文件', choices=['是', '否'],
                                                         value='否', interactive=True, scale=1)
                 key_button = gr.Button("开始提取", variant='primary', icon='z_using_files/pics/shoot.ico')
             # 结果页面
