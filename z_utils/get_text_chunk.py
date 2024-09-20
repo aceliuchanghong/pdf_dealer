@@ -37,9 +37,9 @@ def chunk_by_LCEL(file_path, chunk_size=700, chunk_overlap=300):
 def get_command_run(command_str):
     # 拆分命令字符串并执行命令
     command = command_str.split(" ")
-    # print(command)
+    print("run command:", command)
     try:
-        result = subprocess.run(command, shell=True, capture_output=True, text=True, encoding='utf-8', errors='ignore')
+        result = subprocess.run(command, capture_output=True, text=True, encoding='utf-8', errors='ignore')
         result.check_returncode()  # 检查命令是否成功执行
         return result.stdout
     except subprocess.CalledProcessError as e:
