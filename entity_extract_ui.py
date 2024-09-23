@@ -16,7 +16,20 @@ logging.basicConfig(level=getattr(logging, log_level))
 logger = logging.getLogger(__name__)
 
 
-def extract_entity(pdf_file_path, image_list, rule, quick_ocr=True):
+def extract_entity(pdf_file_path, image_list, rule, quick_ocr='是'):
+    """
+    提取实体的分发,分为长短pdf,图片,是否快速处理
+    :param pdf_file_path: pdf路径
+    :param image_list: pdf转为图片的list
+    :param rule: 提取实体的种类,设置的规则
+    :param quick_ocr: 是否快速ocr提取
+    :return: entity的list
+    """
+    if quick_ocr == '是':
+        quick_ocr = True
+    else:
+        quick_ocr = False
+    logger.debug(f"pdf_file_path:{pdf_file_path},image_list:{image_list},rule:{rule},quick_ocr:{quick_ocr}")
     entities = []
     if pdf_file_path is None:
         return entities
@@ -27,6 +40,10 @@ def extract_entity(pdf_file_path, image_list, rule, quick_ocr=True):
         else:
             # extract_long_pdf_entity(pdf_file_path, rule)
             logger.info("长pdf提取开发中")
+            entities = [
+                {"sure": False, "rule_name": "提取合同信息规则", "entity_name": "条形码号码",
+                 "result": "长pdf提取开发中"},
+            ]
     else:
         ocr_result_list = quick_ocr_image(image_list, quick_ocr)
         entities = extract_short_entity(rule, ocr_result_list)

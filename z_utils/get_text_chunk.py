@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import subprocess
 import ast
 
@@ -21,8 +22,12 @@ def chunk_by_LCEL(file_path, chunk_size=700, chunk_overlap=300):
     from langchain_text_splitters import RecursiveCharacterTextSplitter
 
     # Load example document
-    with open(file_path, encoding='utf-8') as f:
-        state_of_the_union = f.read()
+    if os.path.exists(file_path):
+        with open(file_path, encoding='utf-8') as f:
+            state_of_the_union = f.read()
+    else:
+        # 输入的直接是文本
+        state_of_the_union = file_path
 
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
@@ -54,9 +59,9 @@ if __name__ == '__main__':
     md_file_path = r'C:\Users\liuch\Documents\img20240708_16193473_latex.md'
 
     # output = run_js_script('../z_test/chunk.js', md_file_path)
-    # output = chunk_by_LCEL(md_file_path)
-    # for y, i in enumerate(output):
-    #     print(str(y) + ":", i.page_content)
+    output = chunk_by_LCEL(md_file_path)
+    for y, i in enumerate(output):
+        print(str(y) + ":", i.page_content)
 
-    print(get_command_run("echo hello world"))
-    print(get_command_run("dir"))
+    # print(get_command_run("echo hello world"))
+    # print(get_command_run("dir"))

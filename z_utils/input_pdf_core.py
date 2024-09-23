@@ -3,7 +3,18 @@ import sys
 from pdf2image import convert_from_path
 from dotenv import load_dotenv
 from tqdm import tqdm
+import logging
+from z_utils.check_db import excute_sqlite_sql
+from z_utils.get_llm_result import get_entity_result
+from z_utils.get_model import TALK_LLM
+from z_utils.get_latex_table import get_latex_table
+from z_utils.get_text_chunk import chunk_by_LCEL
+from z_utils.rotate2fix_pic import detect_text_orientation
+from z_utils.sql_sentence import select_rule_sql
 
+log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
+logging.basicConfig(level=getattr(logging, log_level))
+logger = logging.getLogger(__name__)
 sys.path.insert(
     0,
     os.path.abspath(
@@ -40,16 +51,73 @@ def process_file(file_original):
 
 
 def quick_ocr_image(image_list, quick_ocr):
-    return []
+    ocr_result_list = []
+    ocr_type = 'format'
+    if quick_ocr:
+        ocr_type = 'ocr'
+    for i, image in enumerate(image_list):
+        try:
+            rotate_image = detect_text_orientation(image, os.path.join(os.getenv('UPLOAD_FILE_PATH'), 'rotate_image'))
+        except Exception as e:
+            rotate_image = image
+        ans = get_latex_table(rotate_image, ip=os.getenv('GOT_OCR_ip'), ocr_type=ocr_type)
+        logger.debug(f"ocr ans: {ans}")
+        ocr_result_list.append(ans)
+    logger.debug(f"ocr_result_list: {ocr_result_list}")
+    return ocr_result_list
 
 
 def extract_short_entity(rule, ocr_result_list):
-    return [
-        {"sure": False, "rule_name": "提取合同信息规则", "entity_name": "条形码号码", "result": "210003526766"},
-        {"sure": False, "rule_name": "提取合同信息规则", "entity_name": "合同-SOB号", "result": "SOB2015"},
-        {"sure": False, "rule_name": "提取合同信息规则", "entity_name": "业务员姓名", "result": "张三3"},
-        {"sure": False, "rule_name": "提取合同信息规则", "entity_name": "购买方公司名称", "result": "X7X有限公司"},
-    ]
+    text_all = ''.join(ans for ans in ocr_result_list)
+    need_items = []
+    tasks = []
+    entity_tuple_list = excute_sqlite_sql(select_rule_sql, (rule,), False)
+    for i, entity in enumerate(entity_tuple_list):
+        task = {
+            "entity_name": entity[0],
+            "entity_format": entity[1],
+            "entity_regex_pattern": entity[2],
+        }
+        prompt_temp = "提取" + task["entity_name"] + \
+                      (",其可能样例是:" + task["entity_format"] if len(task["entity_format"]) > 1 else "") + \
+                      (",其可能的正则表达式为:" + task["entity_regex_pattern"] if len(
+                          task["entity_regex_pattern"]) > 1 else "")
+        need_items.append(prompt_temp)
+        tasks.append(task)
+    logger.debug(f"need_items: {need_items}")
+
+    entity_list = []
+    client = TALK_LLM()
+    chunks = chunk_by_LCEL(text_all)
+
+    for i, need_item in enumerate(need_items):
+        entity = {}
+        extracted_entity_name = tasks[i]["entity_name"]
+        for chunk in chunks:
+            ans = get_entity_result(client, need_item, chunk.page_content)
+            logger.debug(f"llm ans: {ans}")
+            if 'answer' in ans:
+                entity['sure'] = False
+                entity['rule_name'] = rule
+                entity['entity_name'] = extracted_entity_name
+                if ans['answer'] != 'DK':
+                    entity['result'] = ans['answer']
+                    break
+                else:
+                    entity['result'] = 'DK'
+            else:
+                entity['sure'] = False
+                entity['rule_name'] = rule
+                entity['entity_name'] = extracted_entity_name
+                entity['result'] = 'DK'
+        entity_list.append(entity)
+    return entity_list
+    # return [
+    #     {"sure": False, "rule_name": "提取合同信息规则", "entity_name": "条形码号码", "result": "210003526766"},
+    #     {"sure": False, "rule_name": "提取合同信息规则", "entity_name": "合同-SOB号", "result": "SOB2015"},
+    #     {"sure": False, "rule_name": "提取合同信息规则", "entity_name": "业务员姓名", "result": "张三3"},
+    #     {"sure": False, "rule_name": "提取合同信息规则", "entity_name": "购买方公司名称", "result": "X7X有限公司"},
+    # ]
 
 
 if __name__ == '__main__':

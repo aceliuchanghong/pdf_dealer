@@ -64,8 +64,8 @@ class Minio_Client:
 
 
 if __name__ == '__main__':
-    EMB_LLM = EMB_LLM()
-    TALK_LLM = TALK_LLM()
-    client, user_prompt, Basic_info = TALK_LLM, '我的名字什么?', '我的名字是lawrence'
+    emb_client = EMB_LLM()
+    llm_client = TALK_LLM()
+    client, user_prompt, Basic_info = llm_client, '我的名字什么?', '我的名字是lawrence'
     print(get_result(client, user_prompt, Basic_info))
-    print(emb_chunks(EMB_LLM, [Basic_info]))
+    print(emb_chunks(emb_client, [Basic_info]))
