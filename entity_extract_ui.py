@@ -3,6 +3,7 @@ import logging
 import os
 from dotenv import load_dotenv
 from datetime import datetime
+from gradio.components import Progress
 from z_utils.check_db import excute_sqlite_sql
 from z_utils.get_text_chunk import get_command_run
 from z_utils.input_pdf_core import process_file, quick_ocr_image, extract_short_entity
@@ -25,28 +26,35 @@ def extract_entity(pdf_file_path, image_list, rule, quick_ocr='是'):
     :param quick_ocr: 是否快速ocr提取
     :return: entity的list
     """
-    if quick_ocr == '是':
-        quick_ocr = True
-    else:
-        quick_ocr = False
-    logger.debug(f"pdf_file_path:{pdf_file_path},image_list:{image_list},rule:{rule},quick_ocr:{quick_ocr}")
-    entities = []
-    if pdf_file_path is None:
-        return entities
-    if pdf_file_path.endswith('.pdf'):
-        if len(image_list) < 3:
-            ocr_result_list = quick_ocr_image(image_list, quick_ocr)
-            entities = extract_short_entity(rule, ocr_result_list)
+    with Progress() as progress:
+        if quick_ocr == '是':
+            quick_ocr = True
         else:
-            # extract_long_pdf_entity(pdf_file_path, rule)
-            logger.info("长pdf提取开发中")
-            entities = [
-                {"sure": False, "rule_name": "提取合同信息规则", "entity_name": "条形码号码",
-                 "result": "长pdf提取开发中"},
-            ]
-    else:
-        ocr_result_list = quick_ocr_image(image_list, quick_ocr)
-        entities = extract_short_entity(rule, ocr_result_list)
+            quick_ocr = False
+        logger.debug(f"pdf_file_path:{pdf_file_path},image_list:{image_list},rule:{rule},quick_ocr:{quick_ocr}")
+        entities = []
+        progress(0, "开始提取实体...")
+        if pdf_file_path is None:
+            progress(1, "提取完成")
+            return entities
+        if pdf_file_path.endswith('.pdf'):
+            if len(image_list) < 3:
+                ocr_result_list = quick_ocr_image(image_list, quick_ocr)
+                progress(0.5, "OCR完成")
+                entities = extract_short_entity(rule, ocr_result_list)
+                progress(1, "提取完成")
+            else:
+                # extract_long_pdf_entity(pdf_file_path, rule)
+                logger.info("长pdf提取开发中")
+                entities = [
+                    {"sure": False, "rule_name": "提取合同信息规则", "entity_name": "条形码号码",
+                    "result": "长pdf提取开发中"},
+                ]
+        else:
+            ocr_result_list = quick_ocr_image(image_list, quick_ocr)
+            progress(0.5, "OCR完成")
+            entities = extract_short_entity(rule, ocr_result_list)
+            progress(1, "提取完成")
 
     logger.debug(f"entities:\n{entities}")
     return entities
