@@ -95,3 +95,10 @@ SELECT
 FROM entity_info
 WHERE rule_name = ? AND original_file_name = ?
 """
+
+select_rule_file_name_sql = """
+SELECT distinct
+  original_file_name
+FROM entity_info
+WHERE rule_name = ? 
+"""

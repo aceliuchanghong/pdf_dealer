@@ -7,7 +7,8 @@ from z_utils.check_db import excute_sqlite_sql
 from z_utils.get_text_chunk import get_command_run
 from z_utils.input_pdf_core import process_file, quick_ocr_image, extract_short_entity
 from z_utils.sql_sentence import create_rule_table_sql, select_rule_sql, insert_rule_sql, delete_rule_sql, \
-    select_all_rule_name_sql, create_entity_info_sql, delete_entity_info_sql, insert_entity_info_sql
+    select_all_rule_name_sql, create_entity_info_sql, delete_entity_info_sql, insert_entity_info_sql, \
+    select_rule_file_name_sql
 
 load_dotenv()
 log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
@@ -16,22 +17,22 @@ logger = logging.getLogger(__name__)
 
 
 def extract_entity(pdf_file_path, image_list, rule, quick_ocr=True):
+    entities = []
     if pdf_file_path is None:
-        return []
+        return entities
     if pdf_file_path.endswith('.pdf'):
         if len(image_list) < 3:
             ocr_result_list = quick_ocr_image(image_list, quick_ocr)
             entities = extract_short_entity(rule, ocr_result_list)
-            return entities
         else:
             # extract_long_pdf_entity(pdf_file_path, rule)
-            print("长pdf提取开发中")
-            return []
+            logger.info("长pdf提取开发中")
     else:
         ocr_result_list = quick_ocr_image(image_list, quick_ocr)
         entities = extract_short_entity(rule, ocr_result_list)
-        # print(entities)
-        return entities
+
+    logger.debug(f"entities:\n{entities}")
+    return entities
 
 
 def create_app():
@@ -95,7 +96,7 @@ def create_app():
                     new_file_name = ''
                     if rename_input_file:
                         new_file_name = 'xxx'
-                        # 增加cp name道新的路径的逻辑
+                        # TODO 增加cp 文件到新的路径的逻辑,方便下载
                     excute_sqlite_sql(delete_entity_info_sql,
                                       (entity_list[0]['rule_name'], os.path.basename(file_original)),
                                       False)
@@ -125,6 +126,7 @@ def create_app():
                         except Exception as e:
                             logger.error(e)
                     return []
+
                 submit_btn.click(submit_result, [entities, file_original, rename_input_file], entities)
 
         file_original.change(fn=process_file, inputs=file_original, outputs=[pic_show, cut_pic])
@@ -191,7 +193,7 @@ def create_app():
                                     task["rendered"] and task["name"].split("_id")[0] == rule_basic_name]
 
                     current_time = datetime.now().strftime("%Y-%m-%d-%H:%M:%S")
-                    sql_delete = excute_sqlite_sql(delete_rule_sql, (target_tasks[0]['name'].split("_id")[0],), False)
+                    excute_sqlite_sql(delete_rule_sql, (target_tasks[0]['name'].split("_id")[0],), False)
                     for target_task in target_tasks:
                         entity = {
                             'rule_name': target_task['name'].split("_id")[0],
@@ -225,6 +227,8 @@ def create_app():
 
             @gr.render(inputs=tasks)
             def render_add_rules(task_list):
+                if len(task_list) == 0:
+                    return
                 # 参考自:https://blog.csdn.net/cxyhjl/article/details/139712016
                 incomplete = [task for task in task_list if not task["rendered"]]  # 过滤出渲染未完成的任务
                 complete = [task for task in task_list if task["rendered"]]
@@ -285,16 +289,23 @@ def create_app():
                 refresh2 = gr.Button("🧲刷新规则", scale=1)
                 button_del = gr.Button("🔑删除此规则", scale=1, variant="stop")
             notice = gr.Textbox(visible=False)
+            gr.Markdown("---")
             with gr.Row():
                 input_command = gr.Textbox(label='🌐输入命令', placeholder="ls", value="ls", interactive=True, scale=5)
                 button_command = gr.Button("🔑执行", scale=1, variant="secondary")
             output_command = gr.Textbox(label="✨执行结果", lines=5)
+            gr.Markdown("---")
             with gr.Row():
-                gr.Image(label='🤖basic_info', value="z_using_files/pics/ell-wide-light.png")
+                rule_option3 = gr.Dropdown(label='🧱选择规则', choices=['提取合同信息规则', '提取发票信息规则'],
+                                           interactive=True, value='提取合同信息规则', scale=3)
+                rule_file_name3 = gr.Dropdown(label='🏗️选择文件名', scale=3)
+                refresh3 = gr.Button("🚦刷新和文件名", scale=1)
+                button_del3 = gr.Button("💭删除此结果", scale=1, variant="stop")
+            notice3 = gr.Textbox(visible=False)
 
             def get_all_rule_name():
                 rule_name_list = []
-                all_rule_name = excute_sqlite_sql(select_all_rule_name_sql)
+                all_rule_name = excute_sqlite_sql(select_all_rule_name_sql, should_print=False)
                 for rule_name in all_rule_name:
                     rule_name_list.append(rule_name[0])
                 logger.debug(f"rule_name_list:{rule_name_list}")
@@ -304,10 +315,28 @@ def create_app():
                 excute_sqlite_sql(delete_rule_sql, (rule_name,), False)
                 return gr.Textbox(visible=True, value="已删除:" + rule_name)
 
+            def get_rule_filename(rule_name):
+                file_name_list = []
+                rule_file_name = excute_sqlite_sql(select_rule_file_name_sql, (rule_name,), should_print=False)
+                for file_name in rule_file_name:
+                    file_name_list.append(file_name[0])
+                logger.debug(f"file_name_list:{file_name_list}")
+                if len(file_name_list) == 0:
+                    return gr.update(value=['该规则还未提取过任何实体'])
+                return gr.update(value=file_name_list[0], choices=file_name_list)
+
+            def delete_rule_filename(rule_name, file_name):
+                excute_sqlite_sql(delete_entity_info_sql, (rule_name, file_name), False)
+                return gr.Textbox(visible=True, value="已删除:" + rule_name + "," + file_name)
+
+        rule_option3.change(get_rule_filename, rule_option3, rule_file_name3)
+        button_del3.click(delete_rule_filename, [rule_option2, rule_file_name3], notice3)
+
         input_command.submit(get_command_run, input_command, output_command)
         button_command.click(get_command_run, input_command, output_command)
 
         button_del.click(delete_rule, rule_option2, notice)
+        refresh3.click(get_all_rule_name, [], rule_option3)
         refresh2.click(get_all_rule_name, [], rule_option2)
         refresh1.click(get_all_rule_name, [], rule_option1)
 
