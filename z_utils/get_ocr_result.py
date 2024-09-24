@@ -3,7 +3,7 @@ import requests
 import logging
 import os
 
-from z_utils.rotate2fix_pic import detect_text_orientation
+from z_utils.get_model import RapidOcr_Client
 
 log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
 logging.basicConfig(level=getattr(logging, log_level))
@@ -32,6 +32,19 @@ OCR: <|im_end|><|im_start|>assistant\n"""
     elapsed_time = end_time - start_time
     logger.debug(f"花费: {elapsed_time} s,ocr结果:\n{response.json()}")
     ans = response.json()['output'].replace(dont_need1, '').replace(dont_need2, '')
+    return ans
+
+
+def easy_ocr(image_file):
+    ans = ''
+    ocr_client = RapidOcr_Client()
+    start_time = time.time()
+    result, _ = ocr_client(image_file)
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    logger.debug(f"rapid-OCR耗时: {elapsed_time:.2f}秒")
+    for buck in result:
+        ans += buck[1]
     return ans
 
 

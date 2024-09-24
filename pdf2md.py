@@ -4,7 +4,7 @@ import logging
 import time
 from dotenv import load_dotenv
 from tqdm import tqdm
-from z_utils.get_latex_table import get_latex_table
+from z_utils.get_ocr_result import get_latex_table
 from z_utils.parse_minerU_ans import pdf2md, parse_minerU_middle_json, replace_images
 from z_utils.rotate2fix_pic import detect_text_orientation
 from z_utils.upload2minio import replace_image_links_in_md

@@ -7,7 +7,7 @@ import logging
 from z_utils.check_db import excute_sqlite_sql
 from z_utils.get_llm_result import get_entity_result
 from z_utils.get_model import TALK_LLM
-from z_utils.get_latex_table import get_latex_table
+from z_utils.get_ocr_result import get_latex_table, easy_ocr
 from z_utils.get_text_chunk import chunk_by_LCEL
 from z_utils.rotate2fix_pic import detect_text_orientation
 from z_utils.sql_sentence import select_rule_sql
@@ -53,15 +53,18 @@ def process_file(file_original):
 def quick_ocr_image(image_list, quick_ocr):
     ocr_result_list = []
     ocr_type = 'format'
-    if quick_ocr:
-        ocr_type = 'ocr'
     for i, image in enumerate(image_list):
         try:
             rotate_image = detect_text_orientation(image, os.path.join(os.getenv('UPLOAD_FILE_PATH'), 'rotate_image'))
         except Exception as e:
             rotate_image = image
-        ans = get_latex_table(rotate_image, ip=os.getenv('GOT_OCR_ip'), ocr_type=ocr_type)
-        logger.debug(f"ocr ans: {ans}")
+        if not quick_ocr:
+            ans1 = easy_ocr(rotate_image)
+            ans2 = get_latex_table(rotate_image, ip=os.getenv('GOT_OCR_ip'), ocr_type='ocr')
+            ans = get_latex_table(rotate_image, ip=os.getenv('GOT_OCR_ip'), ocr_type=ocr_type) + ans1 + ans2
+        else:
+            ans = easy_ocr(rotate_image)
+        logger.info(f"ocr ans: {ans}")
         ocr_result_list.append(ans)
     logger.debug(f"ocr_result_list: {ocr_result_list}")
     return ocr_result_list
@@ -77,6 +80,7 @@ def extract_short_entity(rule, ocr_result_list):
             "entity_name": entity[0],
             "entity_format": entity[1],
             "entity_regex_pattern": entity[2],
+            "entity_order": entity[3],
         }
         prompt_temp = "提取" + task["entity_name"] + \
                       (",其可能样例是:" + task["entity_format"] if len(task["entity_format"]) > 1 else "") + \
@@ -110,6 +114,7 @@ def extract_short_entity(rule, ocr_result_list):
                 entity['rule_name'] = rule
                 entity['entity_name'] = extracted_entity_name
                 entity['result'] = 'DK'
+        entity['remark'] = tasks[i]["entity_order"]
         entity_list.append(entity)
     return entity_list
     # return [

@@ -7,6 +7,7 @@ from minio import Minio
 from z_test.test_emb import emb_chunks
 from z_test.test_llm import get_result
 from pymilvus import MilvusClient
+from rapidocr_onnxruntime import RapidOCR
 
 load_dotenv()
 
@@ -47,6 +48,21 @@ class Milvus_Client:
         return cls._instance
 
 
+class RapidOcr_Client:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if not cls._instance:
+                is_cuda_exists = os.getenv('is_cuda_exists')
+                cuda = False
+                if is_cuda_exists == 'exist':
+                    cuda = True
+                cls._instance = RapidOCR(det_use_cuda=cuda, cls_use_cuda=cuda, rec_use_cuda=cuda)
+        return cls._instance
+
+
 class Minio_Client:
     _instance = None
     _lock = threading.Lock()
@@ -66,6 +82,9 @@ class Minio_Client:
 if __name__ == '__main__':
     emb_client = EMB_LLM()
     llm_client = TALK_LLM()
+    ocr_client = RapidOcr_Client()
     client, user_prompt, Basic_info = llm_client, '我的名字什么?', '我的名字是lawrence'
     print(get_result(client, user_prompt, Basic_info))
     print(emb_chunks(emb_client, [Basic_info]))
+    result, _ = ocr_client('../z_using_files/pics/00.jpg')
+    print(result)

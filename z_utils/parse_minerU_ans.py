@@ -7,7 +7,7 @@ import re
 
 from dotenv import load_dotenv
 
-from z_utils.get_latex_table import get_latex_table
+from z_utils.get_ocr_result import get_latex_table
 
 load_dotenv()
 log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
