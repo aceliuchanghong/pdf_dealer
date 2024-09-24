@@ -17,7 +17,7 @@ logging.basicConfig(level=getattr(logging, log_level))
 logger = logging.getLogger(__name__)
 
 
-def extract_entity(pdf_file_path, image_list, rule, quick_ocr='是', progress=gr.Progress()):
+def extract_entity(pdf_file_path, image_list, rule, quick_ocr='是', *, progress=gr.Progress()):
     """
     提取实体的分发,分为长短pdf,图片,是否快速处理
     :param pdf_file_path: pdf路径
@@ -32,19 +32,21 @@ def extract_entity(pdf_file_path, image_list, rule, quick_ocr='是', progress=gr
         quick_ocr = False
     logger.debug(f"pdf_file_path:{pdf_file_path},image_list:{image_list},rule:{rule},quick_ocr:{quick_ocr}")
     entities = []
-    progress(0, "开始提取实体...")
+    ocr_result_list = []
+    progress(0.1, "图片旋转矫正...")
     if pdf_file_path is None:
-        progress(1, "提取完成")
-        return entities, gr.update(value="开始提取-短文档12s")
+        progress(0.9, "提取完成")
+        return entities, ocr_result_list
     if pdf_file_path.endswith('.pdf'):
         if len(image_list) < 4:
             ocr_result_list = quick_ocr_image(image_list, quick_ocr)
             progress(0.5, "OCR完成")
             entities = extract_short_entity(rule, ocr_result_list)
-            progress(1, "提取完成")
+            progress(0.9, "提取完成")
         else:
             # extract_long_pdf_entity(pdf_file_path, rule)
             logger.info("长pdf提取开发中")
+            ocr_result_list = ['长文本不返回OCR结果']
             entities = [
                 {"sure": False, "rule_name": "提取合同信息规则", "entity_name": "条形码号码",
                  "result": "长pdf提取开发中"},
@@ -53,10 +55,11 @@ def extract_entity(pdf_file_path, image_list, rule, quick_ocr='是', progress=gr
         ocr_result_list = quick_ocr_image(image_list, quick_ocr)
         progress(0.5, "OCR完成")
         entities = extract_short_entity(rule, ocr_result_list)
-        progress(1, "提取完成")
+        progress(0.9, "提取完成")
 
     logger.debug(f"entities:\n{entities}")
-    return entities, gr.update(value="开始提取-短文档12s")
+    text_all = ''.join(ans for ans in ocr_result_list)
+    return entities, gr.update(value=text_all, visible=True)
 
 
 def create_app():
@@ -68,8 +71,10 @@ def create_app():
                 gr.Image(label='🤖basic_info', value="z_using_files/pics/ell-wide-light.png")
             gr.Markdown("---")
             with gr.Row():
-                file_original = gr.File(file_count='single', file_types=['image', '.pdf'],
-                                        label='📕上传文件', scale=5)
+                with gr.Column(scale=5):
+                    file_original = gr.File(file_count='single', file_types=['image', '.pdf'],
+                                            label='📕上传文件')
+                    ocr_text = gr.Textbox(label='💡识别结果', visible=True)
                 file_original.GRADIO_CACHE = file_default_path
                 pic_show = gr.Gallery(label='📙文件预览', scale=5, columns=4, container=True, preview=True)
                 cut_pic = gr.Dropdown(label='切分图片列表', choices=[], visible=False, allow_custom_value=True)
@@ -140,7 +145,7 @@ def create_app():
                             'entity_name': entity['entity_name'],
                             'result': entity['result'],
                             'latest_modified_insert': datetime.now().strftime("%Y-%m-%d-%H:%M:%S"),
-                            'remark': '暂无'
+                            'remark': entity['remark']
                         }
                         logger.debug(f"{insert_entity}")
                         try:
@@ -163,7 +168,7 @@ def create_app():
 
         file_original.change(fn=process_file, inputs=file_original, outputs=[pic_show, cut_pic])
         key_button.click(fn=extract_entity, inputs=[file_original, cut_pic, rule_option1, quick_ocr],
-                         outputs=[entities, key_button], show_progress=True)
+                         outputs=[entities, ocr_text])
 
         with gr.Tab(label='👉规则设定'):
             with gr.Row():
@@ -329,8 +334,7 @@ def create_app():
             output_command = gr.Textbox(label="✨执行结果", lines=5)
             gr.Markdown("---")
             with gr.Row():
-                rule_option3 = gr.Dropdown(label='🧱选择规则', choices=['提取合同信息规则', '提取发票信息规则'],
-                                           interactive=True, value='提取合同信息规则', scale=3)
+                rule_option3 = gr.Dropdown(label='🧱选择规则', interactive=True, scale=3)
                 rule_file_name3 = gr.Dropdown(label='🏗️选择文件名', scale=3)
                 refresh3 = gr.Button("🚦刷新和文件名", scale=1)
                 query3 = gr.Button("🧠查询该文件细节", scale=1)
@@ -354,10 +358,11 @@ def create_app():
                 rule_file_name = excute_sqlite_sql(select_rule_file_name_sql, (rule_name,), should_print=False)
                 for file_name in rule_file_name:
                     file_name_list.append(file_name[0])
+                logger.debug(f"rule_file_name:{rule_file_name}")
                 logger.debug(f"file_name_list:{file_name_list}")
                 if len(file_name_list) == 0:
                     return gr.update(value=['该规则还未提取过任何实体'])
-                return gr.update(value=file_name_list[0], choices=file_name_list)
+                return gr.update(choices=file_name_list)
 
             def delete_rule_filename(rule_name, file_name):
                 excute_sqlite_sql(delete_entity_info_sql, (rule_name, file_name), False)
@@ -386,8 +391,8 @@ def create_app():
                         gr.Textbox(label="🔗" + entity["entity_name"], value=entity["result"], interactive=False)
 
         rule_option3.change(get_rule_filename, rule_option3, rule_file_name3)
-        button_del3.click(delete_rule_filename, [rule_option2, rule_file_name3], notice3)
-        query3.click(select_rule_filename_info, [rule_option2, rule_file_name3], last_result)
+        button_del3.click(delete_rule_filename, [rule_option3, rule_file_name3], notice3)
+        query3.click(select_rule_filename_info, [rule_option3, rule_file_name3], last_result)
 
         input_command.submit(get_command_run, input_command, output_command)
         button_command.click(get_command_run, input_command, output_command)
