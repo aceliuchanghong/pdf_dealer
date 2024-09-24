@@ -11,18 +11,22 @@ logger = logging.getLogger(__name__)
 
 
 def get_entity_result(client, user_prompt, Basic_info=''):
-    system_prompt = """示例基本信息:"世界上最高的山是珠穆朗玛峰"
-示例问题输入:"提取世界上最高的山"
-你是一个文档结构化专家,用户将提供一些基本信息和问题输入,按照以下要求
-1.请根据基本信息解析"question"和"answer",以JSON格式输出
-2.没有满足其正则表达则:answer=DK
-3.在提供的基本信息中没有则:answer=DK
-示例JSON输出:
+    system_prompt = """#Role
+You are a Document-Structuring-Specialist
+
+## Skills
+1. Parse "question" and "answer" based on the basic information provided and output in JSON format.
+2. If the answer does not meet the regular expression: answer = DK
+3. If the answer is not in the provided basic information: answer = DK
+4. As the provided text is OCR text, some character errors need to be auto ignored and fixed.
+
+## Example output
 {
-    "question": "提取世界上最高的山",
-    "answer": "珠穆朗玛峰"
-}"""
-    prompt = ("\n基本信息:\n" + Basic_info if len(Basic_info) > 10 else "") + "\n问题输入:\n" + user_prompt
+"question": "Extract the highest mountain in the world",
+"answer": "Mount Everest"
+}
+"""
+    prompt = ("\n## Basic info:\n" + Basic_info if len(Basic_info) > 10 else "") + "\n## Action:\n" + user_prompt
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": prompt},
