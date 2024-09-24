@@ -88,7 +88,7 @@ def extract_short_entity(rule, ocr_result_list):
                           task["entity_regex_pattern"]) > 1 else "")
         need_items.append(prompt_temp)
         tasks.append(task)
-    logger.debug(f"need_items: {need_items}")
+    logger.info(f"need_items: {need_items}")
 
     entity_list = []
     client = TALK_LLM()

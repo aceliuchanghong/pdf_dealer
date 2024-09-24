@@ -2,7 +2,6 @@ import os
 import sqlite3
 from sqlite3 import Connection
 import logging
-
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -41,18 +40,18 @@ class VerboseCursor(sqlite3.Cursor):
         return parameterized_sql
 
     def execute(self, sql, parameters=None):
-        self.logger.info(f"Executing SQL statement:{self.safe_format_sql(sql, parameters)}")
+        self.logger.debug(f"Executing SQL statement:{self.safe_format_sql(sql, parameters)}")
         if parameters:
             try:
                 super().execute(sql, parameters)
             except sqlite3.Error as e:
-                print(f"execute2:An error occurred: {e}")
+                self.logger.error(f"execute2:An error occurred: {e}")
                 return False
             return True
         try:
             super().execute(sql)
         except sqlite3.Error as e:
-            print(f"execute:An error occurred: {e}")
+            self.logger.error(f"execute:An error occurred: {e}")
             return False
         return True
 
