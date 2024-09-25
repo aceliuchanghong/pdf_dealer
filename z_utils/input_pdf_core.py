@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 from pdf2image import convert_from_path
 from dotenv import load_dotenv
@@ -59,19 +60,21 @@ def quick_ocr_image(image_list, quick_ocr):
         except Exception as e:
             rotate_image = image
         if not quick_ocr:
-            ans1 = easy_ocr(rotate_image)
             # ans2 = get_latex_table(rotate_image, ip=os.getenv('GOT_OCR_ip'), ocr_type='ocr')
-            ans = get_latex_table(rotate_image, ip=os.getenv('GOT_OCR_ip'), ocr_type=ocr_type) + ans1
+            ans = get_latex_table(rotate_image, ip=os.getenv('GOT_OCR_ip'), ocr_type=ocr_type)
+            if len(ans) < 50:
+                ans1 = easy_ocr(rotate_image)
+                ans = ans + ans1
         else:
             ans = easy_ocr(rotate_image)
-        logger.info(f"ocr ans: {ans}")
+        logger.debug(f"ocr ans_{i}: {ans}")
         ocr_result_list.append(ans)
-    logger.debug(f"ocr_result_list: {ocr_result_list}")
+    logger.info(f"ocr_result_list: \n{ocr_result_list}")
     return ocr_result_list
 
 
 def extract_short_entity(rule, ocr_result_list):
-    text_all = ''.join(ans for ans in ocr_result_list)
+    text_all = ''.join(ocr_result_list)
     need_items = []
     tasks = []
     entity_tuple_list = excute_sqlite_sql(select_rule_sql, (rule,), False)
@@ -83,8 +86,8 @@ def extract_short_entity(rule, ocr_result_list):
             "entity_order": entity[3],
         }
         prompt_temp = "提取" + task["entity_name"] + \
-                      (",其可能样例是:" + task["entity_format"] if len(task["entity_format"]) > 1 else "") + \
-                      (",其可能的正则表达式为:" + task["entity_regex_pattern"] if len(
+                      (",结果案例:" + task["entity_format"] if len(task["entity_format"]) > 1 else "") + \
+                      (",结果正则:" + task["entity_regex_pattern"] if len(
                           task["entity_regex_pattern"]) > 1 else "")
         need_items.append(prompt_temp)
         tasks.append(task)
@@ -96,7 +99,7 @@ def extract_short_entity(rule, ocr_result_list):
     for i, need_item in enumerate(need_items):
         entity = {}
         extracted_entity_name = tasks[i]["entity_name"]
-        ans = get_entity_result(client, need_item, text_all)
+        ans = get_entity_result(client, need_item, text_all[:1800])
         logger.info(f"llm ans_{i}: {ans}")
 
         entity['sure'] = False
@@ -105,9 +108,17 @@ def extract_short_entity(rule, ocr_result_list):
         if 'answer' in ans and ans['answer'] != 'DK':
             entity['result'] = ans['answer']
         else:
-            entity['result'] = 'DK'
-
+            if len(tasks[i]["entity_regex_pattern"]) > 1:
+                match = re.search(tasks[i]["entity_regex_pattern"], text_all)
+                if match:
+                    entity['result'] = match.group(0)
+                    logger.info(f"regex: {match.group(0)}")
+                else:
+                    entity['result'] = 'DK'
+            else:
+                entity['result'] = 'DK'
         entity['remark'] = tasks[i]["entity_order"]
+        logger.debug(f"entity: {entity}")
         entity_list.append(entity)
     return entity_list
     # return [
