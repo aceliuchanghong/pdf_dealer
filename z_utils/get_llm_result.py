@@ -26,7 +26,7 @@ You are a Document-Structuring-Specialist
 "answer": "Mount Everest"
 }
 """
-    prompt = ("\n## Basic info:\n" + Basic_info if len(Basic_info) > 10 else "") + "\n## Action:\n" + user_prompt
+    prompt = ("\n## Basic info:\n" + Basic_info if len(Basic_info) > 10 else "") + "\n## Input command:\n" + user_prompt
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": prompt},
@@ -42,7 +42,8 @@ You are a Document-Structuring-Specialist
     elapsed_time = end_time - start_time
     ans_temp = response.choices[0].message.content
 
-    logger.debug(f"大模型prompt: {prompt}")
+    # logger.info(f"xxxxx\n提交的messages: {messages}\nxxxxx")
+    logger.info(f"user-prompt: {prompt}")
     logger.debug(f"LLM回答耗时: {elapsed_time:.2f}秒")
     logger.debug(f"大模型response:{response}")
     return parse_json_markdown(ans_temp)

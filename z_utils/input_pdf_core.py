@@ -60,8 +60,8 @@ def quick_ocr_image(image_list, quick_ocr):
             rotate_image = image
         if not quick_ocr:
             ans1 = easy_ocr(rotate_image)
-            ans2 = get_latex_table(rotate_image, ip=os.getenv('GOT_OCR_ip'), ocr_type='ocr')
-            ans = get_latex_table(rotate_image, ip=os.getenv('GOT_OCR_ip'), ocr_type=ocr_type) + ans1 + ans2
+            # ans2 = get_latex_table(rotate_image, ip=os.getenv('GOT_OCR_ip'), ocr_type='ocr')
+            ans = get_latex_table(rotate_image, ip=os.getenv('GOT_OCR_ip'), ocr_type=ocr_type) + ans1
         else:
             ans = easy_ocr(rotate_image)
         logger.info(f"ocr ans: {ans}")
@@ -92,28 +92,21 @@ def extract_short_entity(rule, ocr_result_list):
 
     entity_list = []
     client = TALK_LLM()
-    chunks = chunk_by_LCEL(text_all)
 
     for i, need_item in enumerate(need_items):
         entity = {}
         extracted_entity_name = tasks[i]["entity_name"]
-        for chunk in chunks:
-            ans = get_entity_result(client, need_item, chunk.page_content)
-            logger.debug(f"llm ans: {ans}")
-            if 'answer' in ans:
-                entity['sure'] = False
-                entity['rule_name'] = rule
-                entity['entity_name'] = extracted_entity_name
-                if ans['answer'] != 'DK':
-                    entity['result'] = ans['answer']
-                    break
-                else:
-                    entity['result'] = 'DK'
-            else:
-                entity['sure'] = False
-                entity['rule_name'] = rule
-                entity['entity_name'] = extracted_entity_name
-                entity['result'] = 'DK'
+        ans = get_entity_result(client, need_item, text_all)
+        logger.info(f"llm ans_{i}: {ans}")
+
+        entity['sure'] = False
+        entity['rule_name'] = rule
+        entity['entity_name'] = extracted_entity_name
+        if 'answer' in ans and ans['answer'] != 'DK':
+            entity['result'] = ans['answer']
+        else:
+            entity['result'] = 'DK'
+
         entity['remark'] = tasks[i]["entity_order"]
         entity_list.append(entity)
     return entity_list
