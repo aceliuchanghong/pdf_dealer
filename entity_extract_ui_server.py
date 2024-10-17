@@ -412,8 +412,8 @@ if __name__ == '__main__':
     cd /mnt/data/llch/pdf_dealer
     conda activate pdf_dealer
     export no_proxy="localhost,127.0.0.1"
-    python entity_extract_ui.py
-    nohup python entity_extract_ui.py>entity_extract_ui.log &
+    python entity_extract_ui_server.py
+    nohup python entity_extract_ui_server.py>entity_extract_ui_server.log &
     """
     file_default_path = os.getenv('UPLOAD_FILE_PATH')
     os.makedirs(file_default_path, exist_ok=True)

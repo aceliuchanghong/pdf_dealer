@@ -8,9 +8,16 @@ from z_test.test_emb import emb_chunks
 from z_test.test_llm import get_result
 from pymilvus import MilvusClient
 from rapidocr_onnxruntime import RapidOCR
-
+from surya.model.detection.model import (
+    load_model as load_det_model,
+    load_processor as load_det_processor,
+)
+from surya.model.recognition.model import load_model as load_rec_model
+from surya.model.recognition.processor import load_processor as load_rec_processor
 load_dotenv()
 
+det_model_path = os.getenv("SURYA_DET3_MODEL_PATH")
+rec_model_path = os.getenv("SURYA_REC2_MODEL_PATH")
 
 class TALK_LLM:
     _instance = None
@@ -78,6 +85,45 @@ class Minio_Client:
                 )
         return cls._instance
 
+
+class Rec_processor_Client:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if not cls._instance:
+                cls._instance = load_rec_processor()
+        return cls._instance
+
+class Det_model_Client:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if not cls._instance:
+                cls._instance = load_det_model(det_model_path)
+        return cls._instance
+
+class Det_processor_Client:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if not cls._instance:
+                cls._instance = load_det_processor(det_model_path)
+        return cls._instance
+class Rec_model_Client:
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        with cls._lock:
+            if not cls._instance:
+                cls._instance = load_rec_model(rec_model_path)
+        return cls._instance
 
 if __name__ == '__main__':
     emb_client = EMB_LLM()
