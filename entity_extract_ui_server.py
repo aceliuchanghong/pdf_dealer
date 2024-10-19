@@ -411,7 +411,7 @@ if __name__ == '__main__':
     """
     cd /mnt/data/llch/pdf_dealer
     conda activate pdf_dealer
-    export no_proxy="localhost,127.0.0.1"
+    export no_proxy="localhost,112.48.199.202,127.0.0.1"
     python entity_extract_ui_server.py
     nohup python entity_extract_ui_server.py>entity_extract_ui_server.log &
     """

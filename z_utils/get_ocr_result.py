@@ -105,7 +105,6 @@ OCR: <|im_end|><|im_start|>assistant\n"""
 
 
 def easy_ocr(image_file):
-    ans = ''
     ocr_client = RapidOcr_Client()
     start_time = time.time()
     rapid_ocr_result, _ = ocr_client(image_file)
